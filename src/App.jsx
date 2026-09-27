@@ -17,9 +17,49 @@ import {
   Download
 } from 'lucide-react';
 
+
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
+// ==================== UTC TIMESTAMP DISPLAY ====================
+const formatScanTimestamp = (value) => {
+  if (!value) return '';
+
+  // Handle numeric timestamps.
+  if (typeof value === 'number') {
+    const date = new Date(value);
+
+    return Number.isNaN(date.getTime())
+      ? ''
+      : date.toLocaleString();
+  }
+
+  const raw = String(value).trim();
+
+  if (!raw) return '';
+
+  // If the backend already includes timezone information,
+  // keep it unchanged.
+  const hasTimezone =
+    /[zZ]|[+-]\d{2}:?\d{2}$/.test(raw);
+
+  // Backend LocalDateTime values such as:
+  // 2026-09-27T09:12:41
+  // are treated as UTC.
+  const normalized =
+    hasTimezone
+      ? raw
+      : `${raw.replace(' ', 'T')}Z`;
+
+  const date = new Date(normalized);
+
+  if (Number.isNaN(date.getTime())) {
+    return raw;
+  }
+
+  // Convert UTC to the browser's local timezone.
+  return date.toLocaleString();
+};
 export default function RootApp() {
   const [token, setToken] = useState(
     localStorage.getItem('token') || null
@@ -40,20 +80,20 @@ function AuthScreen({ setToken }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!isLogin && password.length < 8) {
-    setError('Password must be at least 8 characters long');
-    return;
-  }
+    if (!isLogin && password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
 
-  setLoading(true);
-  setError('');
+    setLoading(true);
+    setError('');
 
-  const endpoint = isLogin
-    ? '/api/v1/auth/login'
-    : '/api/v1/auth/register';
+    const endpoint = isLogin
+      ? '/api/v1/auth/login'
+      : '/api/v1/auth/register';
 
     try {
       const response = await fetch(
@@ -1338,122 +1378,209 @@ function MainDashboard({ setToken }) {
           contentText
         ) => {
 
-          if (yPos > 230) {
-
-            doc.addPage();
-            yPos = 20;
-
-          }
-
-          doc.setFont(
-            "helvetica",
-            "bold"
-          );
-
-          doc.setFontSize(12);
-
-          doc.setTextColor(
-            15,
-            23,
-            42
-          );
-
-          doc.text(
-            title,
-            14,
-            yPos
-          );
-
-          yPos += 6;
+          const safeContent =
+            String(
+              contentText ?? ""
+            );
 
           const lines =
             doc.splitTextToSize(
-              contentText,
-              172
+              safeContent,
+              170
             );
 
-          const blockHeight =
-            Math.max(
-              16,
-              lines.length * 4.5 + 8
-            );
+          const lineHeight = 4.5;
+
+          let lineIndex = 0;
+
+          let isFirstPage =
+            true;
 
           if (
-            yPos + blockHeight > 280
+            lines.length === 0
           ) {
 
-            doc.addPage();
-            yPos = 20;
+            lines.push(
+              "No data available."
+            );
 
           }
 
-          doc.setFillColor(
-            15,
-            23,
-            42
-          );
+          while (
+            lineIndex < lines.length
+          ) {
 
-          doc.setDrawColor(
-            51,
-            65,
-            85
-          );
+            // ===================================================
+            // START A NEW PAGE WHEN NEEDED
+            // ===================================================
 
-          doc.roundedRect(
-            14,
-            yPos,
-            182,
-            blockHeight,
-            2,
-            2,
-            'FD'
-          );
+            if (
+              !isFirstPage ||
+              yPos > 230
+            ) {
 
-          doc.setFont(
-            "courier",
-            "normal"
-          );
+              doc.addPage();
 
-          doc.setFontSize(8);
-
-          doc.setTextColor(
-            226,
-            232,
-            240
-          );
-
-          let codeY =
-            yPos + 6;
-
-          lines.forEach(
-            (line) => {
-
-              doc.text(
-                line,
-                18,
-                codeY
-              );
-
-              codeY += 4.5;
+              yPos = 20;
 
             }
-          );
 
-          yPos +=
-            blockHeight + 8;
+            // ===================================================
+            // SECTION TITLE
+            // ===================================================
 
+            doc.setFont(
+              "helvetica",
+              "bold"
+            );
+
+            doc.setFontSize(12);
+
+            doc.setTextColor(
+              15,
+              23,
+              42
+            );
+
+            doc.text(
+              isFirstPage
+                ? title
+                : `${title} (continued)`,
+              14,
+              yPos
+            );
+
+            yPos += 6;
+
+            // ===================================================
+            // CALCULATE AVAILABLE PAGE SPACE
+            // ===================================================
+
+            const bottomMargin =
+              280;
+
+            const remainingHeight =
+              bottomMargin -
+              yPos -
+              8;
+
+            const maxLines =
+              Math.max(
+                1,
+                Math.floor(
+                  remainingHeight /
+                    lineHeight
+                )
+              );
+
+            // ===================================================
+            // GET ONLY THE LINES THAT FIT ON THIS PAGE
+            // ===================================================
+
+            const pageLines =
+              lines.slice(
+                lineIndex,
+                lineIndex +
+                  maxLines
+              );
+
+            const blockHeight =
+              Math.max(
+                16,
+                pageLines.length *
+                  lineHeight +
+                  8
+              );
+
+            // ===================================================
+            // SBOM / CODE BLOCK BACKGROUND
+            // ===================================================
+
+            doc.setFillColor(
+              15,
+              23,
+              42
+            );
+
+            doc.setDrawColor(
+              51,
+              65,
+              85
+            );
+
+            doc.roundedRect(
+              14,
+              yPos,
+              182,
+              blockHeight,
+              2,
+              2,
+              'FD'
+            );
+
+            // ===================================================
+            // BLOCK TEXT
+            // ===================================================
+
+            doc.setFont(
+              "courier",
+              "normal"
+            );
+
+            doc.setFontSize(8);
+
+            doc.setTextColor(
+              226,
+              232,
+              240
+            );
+
+            let codeY =
+              yPos + 6;
+
+            pageLines.forEach(
+              (line) => {
+
+                doc.text(
+                  line,
+                  18,
+                  codeY
+                );
+
+                codeY +=
+                  lineHeight;
+
+              }
+            );
+
+            // ===================================================
+            // UPDATE POSITION AND CONTINUE
+            // ===================================================
+
+            yPos +=
+              blockHeight + 8;
+
+            lineIndex +=
+              pageLines.length;
+
+            isFirstPage =
+              false;
+          }
         };
 
+      // ==================== VERSION DIFF ====================
       renderCodeBlock(
         "Version Diff / Manifest Changes",
         resolvedVersionDiff
       );
 
+      // ==================== SBOM ====================
       renderCodeBlock(
         "Software Bill of Materials (SBOM) Findings",
         resolvedSbomFindings
       );
 
+      // ==================== SAFE PDF FILENAME ====================
       const safeFilename =
         resolvedExtensionName
           .replace(
@@ -2153,23 +2280,23 @@ function MainDashboard({ setToken }) {
                 {selectedTab ===
                   'permissions' && (
 
-                    <div className="bg-slate-950 rounded-lg p-4 font-mono text-xs overflow-x-auto border border-slate-800 space-y-1">
+                  <div className="bg-slate-950 rounded-lg p-4 font-mono text-xs overflow-x-auto border border-slate-800 space-y-1">
 
-                      <div className="text-slate-500">
-                        // Parsed manifest permissions
-                      </div>
+                    <div className="text-slate-500">
+                      // Parsed manifest permissions
+                    </div>
 
-                      <div className="text-emerald-400 bg-emerald-950/40 p-2 rounded mt-2">
+                    <div className="text-emerald-400 bg-emerald-950/40 p-2 rounded mt-2">
 
-                        permissions: [
-                        {permissions.join(', ')}
-                        ]
-
-                      </div>
+                      permissions: [
+                      {permissions.join(', ')}
+                      ]
 
                     </div>
 
-                  )}
+                  </div>
+
+                )}
 
                 {/* ==================== SBOM ==================== */}
                 {selectedTab === 'sbom' && (
@@ -2196,82 +2323,78 @@ function MainDashboard({ setToken }) {
                 {selectedTab ===
                   'history' && (
 
-                    <div className="bg-slate-950 rounded-lg p-4 font-mono text-xs overflow-x-auto border border-slate-800 space-y-2">
+                  <div className="bg-slate-950 rounded-lg p-4 font-mono text-xs overflow-x-auto border border-slate-800 space-y-2">
 
-                      <div className="text-slate-500">
-                        // Persistent Scan History from PostgreSQL DB
-                      </div>
+                    <div className="text-slate-500">
+                      // Persistent Scan History from PostgreSQL DB
+                    </div>
 
-                      {scanHistory.length > 0 ? (
+                    {scanHistory.length > 0 ? (
 
-                        <div className="space-y-2 mt-2">
+                      <div className="space-y-2 mt-2">
 
-                          {scanHistory.map(
-                            (item, idx) => (
+                        {scanHistory.map(
+                          (item, idx) => (
 
-                              <div
-                                key={idx}
-                                className="flex justify-between items-center p-3 bg-slate-900 rounded-lg border border-slate-800 text-slate-300"
-                              >
+                            <div
+                              key={idx}
+                              className="flex justify-between items-center p-3 bg-slate-900 rounded-lg border border-slate-800 text-slate-300"
+                            >
 
-                                <div>
+                              <div>
 
-                                  <span className="text-white font-bold">
-                                    {item.extensionName}
-                                  </span>
+                                <span className="text-white font-bold">
+                                  {item.extensionName}
+                                </span>
 
-                                  <span className="text-slate-500 text-[11px] block">
+                                <span className="text-slate-500 text-[11px] block">
 
-                                    {item.scannedAt
-                                      ? new Date(
-                                          item.scannedAt
-                                        ).toLocaleString()
-                                      : ''}
+  {formatScanTimestamp(item.scannedAt)}
 
-                                  </span>
-
-                                </div>
-
-                                <div className="flex items-center gap-4">
-
-                                  <span className="text-cyan-400 font-semibold">
-                                    Risk Score: {item.riskScore}
-                                  </span>
-
-                                  <span
-                                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                      item.riskLevel ===
-                                      'HIGH'
-                                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                        : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                    }`}
-                                  >
-                                    {
-                                      item.riskLevel ||
-                                      item.status
-                                    }
-                                  </span>
-
-                                </div>
+</span>
 
                               </div>
 
-                            )
-                          )}
+                              <div className="flex items-center gap-4">
 
-                        </div>
+                                <span className="text-cyan-400 font-semibold">
+                                  Risk Score: {item.riskScore}
+                                </span>
 
-                      ) : (
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    item.riskLevel ===
+                                    'HIGH'
+                                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                      : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                  }`}
+                                >
+                                  {
+                                    item.riskLevel ||
+                                    item.status
+                                  }
+                                </span>
 
-                        <div className="text-slate-400 mt-2 p-3 text-center">
-                          No scan history recorded in database yet.
-                        </div>
+                              </div>
 
-                      )}
+                            </div>
 
-                    </div>
+                          )
+                        )}
 
-                  )}
+                      </div>
+
+                    ) : (
+
+                      <div className="text-slate-400 mt-2 p-3 text-center">
+                        No scan history recorded in database yet.
+                      </div>
+
+                    )}
+
+                  </div>
+
+                )}
 
                 {/* ==================== AUDIT TRAIL ==================== */}
                 {selectedTab === 'audit' && (
@@ -2349,11 +2472,30 @@ function MainDashboard({ setToken }) {
                               'ALLOWLISTED';
 
                             const parsedDate =
-                              log.timestamp
-                                ? new Date(
-                                    log.timestamp
-                                  )
-                                : null;
+  log.timestamp
+    ? (() => {
+        const raw = String(
+          log.timestamp
+        ).trim();
+
+        const hasTimezone =
+          /[zZ]|[+-]\d{2}:?\d{2}$/.test(
+            raw
+          );
+
+        const normalized =
+          hasTimezone
+            ? raw
+            : `${raw.replace(
+                ' ',
+                'T'
+              )}Z`;
+
+        return new Date(
+          normalized
+        );
+      })()
+    : null;
 
                             const formattedDate =
                               parsedDate &&
