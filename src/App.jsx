@@ -157,13 +157,9 @@ function AuthScreen({ setToken }) {
             <ShieldAlert size={32} />
           </div>
 
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            Extension Risk Observatory
-          </h1>
-
-          <p className="text-xs text-slate-400">
-            Secure Supply-Chain Analysis Platform
-          </p>
+<h1 className="text-2xl font-bold tracking-tight text-white">
+  Browser Extension Supply-Chain Risk and Permission Observatory
+</h1>
 
         </div>
 
@@ -778,11 +774,11 @@ function MainDashboard({ setToken }) {
         42
       );
 
-      doc.text(
-        "Browser Extension Risk Observatory",
-        14,
-        yPos
-      );
+     doc.text(
+  "Browser Extension Supply-Chain Risk and Permission Observatory",
+  7,
+  yPos
+);
 
       yPos += 7;
 
@@ -1619,16 +1615,13 @@ function MainDashboard({ setToken }) {
 
             <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
 
-              <ShieldAlert className="text-cyan-400" />
+  <ShieldAlert className="text-cyan-400" />
 
-              Browser Extension Risk Observatory
+  Browser Extension Supply-Chain Risk and Permission Observatory
 
-            </h1>
+</h1>
 
-            <p className="text-sm text-slate-400">
-              Supply-Chain Risk & Permission Analysis Engine
-            </p>
-
+           
           </div>
 
           <div className="flex items-center gap-3">
@@ -2784,9 +2777,9 @@ function MainDashboard({ setToken }) {
 
                   <div>
 
-                    <h2 className="text-xl font-bold text-white">
-                      Browser Extension Risk Observatory
-                    </h2>
+<h2 className="text-xl font-bold text-white">
+  Browser Extension Supply-Chain Risk and Permission Observatory
+</h2>
 
                     <p className="text-[11px] text-slate-400">
 
