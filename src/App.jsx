@@ -97,7 +97,7 @@ function AuthScreen({ setToken }) {
 
     try {
       const response = await fetch(
-        `http://localhost:8080${endpoint}`,
+        `https://observatory-backend-35w4.onrender.com${endpoint}`,
         {
           method: 'POST',
           headers: {
@@ -348,7 +348,7 @@ function MainDashboard({ setToken }) {
         localStorage.getItem('userEmail') || '';
 
       const response = await fetch(
-        `http://localhost:8080/api/v1/extensions/stats?userEmail=${encodeURIComponent(userEmail)}`,
+        `https://observatory-backend-35w4.onrender.com/api/v1/extensions/stats?userEmail=${encodeURIComponent(userEmail)}`,
         {
           headers: {
             'Authorization':
@@ -385,7 +385,7 @@ function MainDashboard({ setToken }) {
         localStorage.getItem('userEmail') || '';
 
       const response = await fetch(
-        `http://localhost:8080/api/v1/scans/history?userEmail=${encodeURIComponent(userEmail)}`,
+        `https://observatory-backend-35w4.onrender.com/api/v1/scans/history?userEmail=${encodeURIComponent(userEmail)}`,
         {
           headers: {
             'Authorization':
@@ -424,7 +424,7 @@ function MainDashboard({ setToken }) {
         localStorage.getItem('userEmail') || '';
 
       const response = await fetch(
-        `http://localhost:8080/api/v1/audit-logs?userEmail=${encodeURIComponent(userEmail)}`,
+        `https://observatory-backend-35w4.onrender.com/api/v1/audit-logs?userEmail=${encodeURIComponent(userEmail)}`,
         {
           headers: {
             'Authorization':
@@ -498,7 +498,7 @@ function MainDashboard({ setToken }) {
 
         const response =
           await fetch(
-            'http://localhost:8080/api/v1/extensions/upload',
+            'https://observatory-backend-35w4.onrender.com/api/v1/extensions/upload',
             {
               method: 'POST',
               headers: {
@@ -1957,7 +1957,7 @@ function MainDashboard({ setToken }) {
 
                       const response =
                         await fetch(
-                          'http://localhost:8080/api/v1/extensions/allowlist',
+                          'https://observatory-backend-35w4.onrender.com/api/v1/extensions/allowlist',
                           {
                             method: 'POST',
 
@@ -2046,7 +2046,7 @@ function MainDashboard({ setToken }) {
 
                       const response =
                         await fetch(
-                          'http://localhost:8080/api/v1/extensions/reject',
+                          'https://observatory-backend-35w4.onrender.com/api/v1/extensions/reject',
                           {
                             method: 'POST',
 
